@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"syscall"
 	"time"
 	"unsafe"
 
@@ -39,8 +40,8 @@ func (c *Conn) PrepareODBCStmt(query string) (*ODBCStmt, error) {
 		return nil, err
 	}
 
-	b := api.StringToUTF16(query)
-	ret = api.SQLPrepare(h, (*api.SQLWCHAR)(unsafe.Pointer(&b[0])), api.SQL_NTS)
+	b := syscall.StringByteSlice(query)
+	ret = api.SQLPrepare(h, (*api.SQLCHAR)(unsafe.Pointer(&b[0])), api.SQL_NTS)
 	if IsError(ret) {
 		defer releaseHandle(h)
 		return nil, c.newError("SQLPrepare", h)
