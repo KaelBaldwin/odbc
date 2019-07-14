@@ -39,26 +39,27 @@ func errnoErr(e syscall.Errno) error {
 var (
 	mododbc32 = windows.NewLazySystemDLL("odbc32.dll")
 
-	procSQLAllocHandle    = mododbc32.NewProc("SQLAllocHandle")
-	procSQLBindCol        = mododbc32.NewProc("SQLBindCol")
-	procSQLBindParameter  = mododbc32.NewProc("SQLBindParameter")
-	procSQLCloseCursor    = mododbc32.NewProc("SQLCloseCursor")
-	procSQLDescribeCol    = mododbc32.NewProc("SQLDescribeCol")
-	procSQLDescribeParam  = mododbc32.NewProc("SQLDescribeParam")
-	procSQLDisconnect     = mododbc32.NewProc("SQLDisconnect")
-	procSQLDriverConnect  = mododbc32.NewProc("SQLDriverConnect")
-	procSQLEndTran        = mododbc32.NewProc("SQLEndTran")
-	procSQLExecute        = mododbc32.NewProc("SQLExecute")
-	procSQLFetch          = mododbc32.NewProc("SQLFetch")
-	procSQLFreeHandle     = mododbc32.NewProc("SQLFreeHandle")
-	procSQLGetData        = mododbc32.NewProc("SQLGetData")
-	procSQLGetDiagRec     = mododbc32.NewProc("SQLGetDiagRec")
-	procSQLNumParams      = mododbc32.NewProc("SQLNumParams")
-	procSQLNumResultCols  = mododbc32.NewProc("SQLNumResultCols")
-	procSQLPrepare        = mododbc32.NewProc("SQLPrepare")
-	procSQLRowCount       = mododbc32.NewProc("SQLRowCount")
-	procSQLSetEnvAttr     = mododbc32.NewProc("SQLSetEnvAttr")
-	procSQLSetConnectAttr = mododbc32.NewProc("SQLSetConnectAttr")
+	procSQLAllocHandle     = mododbc32.NewProc("SQLAllocHandle")
+	procSQLBindCol         = mododbc32.NewProc("SQLBindCol")
+	procSQLBindParameter   = mododbc32.NewProc("SQLBindParameter")
+	procSQLCloseCursor     = mododbc32.NewProc("SQLCloseCursor")
+	procSQLDescribeColW    = mododbc32.NewProc("SQLDescribeColW")
+	procSQLDescribeParam   = mododbc32.NewProc("SQLDescribeParam")
+	procSQLDisconnect      = mododbc32.NewProc("SQLDisconnect")
+	procSQLDriverConnectW  = mododbc32.NewProc("SQLDriverConnectW")
+	procSQLEndTran         = mododbc32.NewProc("SQLEndTran")
+	procSQLExecute         = mododbc32.NewProc("SQLExecute")
+	procSQLFetch           = mododbc32.NewProc("SQLFetch")
+	procSQLFreeHandle      = mododbc32.NewProc("SQLFreeHandle")
+	procSQLGetData         = mododbc32.NewProc("SQLGetData")
+	procSQLGetDiagRecW     = mododbc32.NewProc("SQLGetDiagRecW")
+	procSQLNumParams       = mododbc32.NewProc("SQLNumParams")
+	procSQLMoreResults     = mododbc32.NewProc("SQLMoreResults")
+	procSQLNumResultCols   = mododbc32.NewProc("SQLNumResultCols")
+	procSQLPrepareW        = mododbc32.NewProc("SQLPrepareW")
+	procSQLRowCount        = mododbc32.NewProc("SQLRowCount")
+	procSQLSetEnvAttr      = mododbc32.NewProc("SQLSetEnvAttr")
+	procSQLSetConnectAttrW = mododbc32.NewProc("SQLSetConnectAttrW")
 )
 
 func SQLAllocHandle(handleType SQLSMALLINT, inputHandle SQLHANDLE, outputHandle *SQLHANDLE) (ret SQLRETURN) {
@@ -147,6 +148,12 @@ func SQLGetDiagRec(handleType SQLSMALLINT, handle SQLHANDLE, recNumber SQLSMALLI
 
 func SQLNumParams(statementHandle SQLHSTMT, parameterCountPtr *SQLSMALLINT) (ret SQLRETURN) {
 	r0, _, _ := syscall.Syscall(procSQLNumParams.Addr(), 2, uintptr(statementHandle), uintptr(unsafe.Pointer(parameterCountPtr)), 0)
+	ret = SQLRETURN(r0)
+	return
+}
+
+func SQLMoreResults(statementHandle SQLHSTMT) (ret SQLRETURN) {
+	r0, _, _ := syscall.Syscall(procSQLMoreResults.Addr(), 1, uintptr(statementHandle), 0, 0)
 	ret = SQLRETURN(r0)
 	return
 }

@@ -67,6 +67,7 @@ func NewColumn(h api.SQLHSTMT, idx int) (Column, error) {
 	}
 	b := &BaseColumn{
 		name: string(namebuf[:namelen]),
+		SQLType: sqltype,
 	}
 	switch sqltype {
 	case api.SQL_BIT:
@@ -83,21 +84,27 @@ func NewColumn(h api.SQLHSTMT, idx int) (Column, error) {
 	case api.SQL_TYPE_DATE:
 		var v api.SQL_DATE_STRUCT
 		return NewBindableColumn(b, api.SQL_C_DATE, int(unsafe.Sizeof(v))), nil
+	case api.SQL_TYPE_TIME:
+		var v api.SQL_TIME_STRUCT
+		return NewBindableColumn(b, api.SQL_C_TIME, int(unsafe.Sizeof(v))), nil
+	case api.SQL_SS_TIME2:
+		var v api.SQL_SS_TIME2_STRUCT
+		return NewBindableColumn(b, api.SQL_C_BINARY, int(unsafe.Sizeof(v))), nil
 	case api.SQL_GUID:
 		var v api.SQLGUID
 		return NewBindableColumn(b, api.SQL_C_GUID, int(unsafe.Sizeof(v))), nil
 	case api.SQL_CHAR, api.SQL_VARCHAR:
-		return NewVariableWidthColumn(b, api.SQL_C_CHAR, size), nil
+		return NewVariableWidthColumn(b, api.SQL_C_CHAR, size)
 	case api.SQL_WCHAR, api.SQL_WVARCHAR:
-		return NewVariableWidthColumn(b, api.SQL_C_WCHAR, size), nil
+		return NewVariableWidthColumn(b, api.SQL_C_WCHAR, size)
 	case api.SQL_BINARY, api.SQL_VARBINARY:
-		return NewVariableWidthColumn(b, api.SQL_C_BINARY, size), nil
+		return NewVariableWidthColumn(b, api.SQL_C_BINARY, size)
 	case api.SQL_LONGVARCHAR:
-		return NewVariableWidthColumn(b, api.SQL_C_CHAR, 0), nil
+		return NewVariableWidthColumn(b, api.SQL_C_CHAR, 0)
 	case api.SQL_WLONGVARCHAR, api.SQL_SS_XML:
-		return NewVariableWidthColumn(b, api.SQL_C_WCHAR, 0), nil
+		return NewVariableWidthColumn(b, api.SQL_C_WCHAR, 0)
 	case api.SQL_LONGVARBINARY:
-		return NewVariableWidthColumn(b, api.SQL_C_BINARY, 0), nil
+		return NewVariableWidthColumn(b, api.SQL_C_BINARY, 0)
 	default:
 		return nil, fmt.Errorf("unsupported column type %d", sqltype)
 	}
@@ -105,8 +112,9 @@ func NewColumn(h api.SQLHSTMT, idx int) (Column, error) {
 
 // BaseColumn implements common column functionality.
 type BaseColumn struct {
-	name  string
-	CType api.SQLSMALLINT
+	name    string
+	SQLType api.SQLSMALLINT
+	CType   api.SQLSMALLINT
 }
 
 func (c *BaseColumn) Name() string {
@@ -158,7 +166,19 @@ func (c *BaseColumn) Value(buf []byte) (driver.Value, error) {
 		r := time.Date(int(t.Year), time.Month(t.Month), int(t.Day),
 			0, 0, 0, 0, time.Local)
 		return r, nil
+	case api.SQL_C_TIME:
+		t := (*api.SQL_TIME_STRUCT)(p)
+		r := time.Date(1, time.January, 1,
+			int(t.Hour), int(t.Minute), int(t.Second), 0, time.Local)
+		return r, nil
 	case api.SQL_C_BINARY:
+		if c.SQLType == api.SQL_SS_TIME2 {
+			t := (*api.SQL_SS_TIME2_STRUCT)(p)
+			r := time.Date(1, time.January, 1,
+				int(t.Hour), int(t.Minute), int(t.Second), int(t.Fraction),
+				time.Local)
+			return r, nil
+		}
 		return buf, nil
 	}
 	return nil, fmt.Errorf("unsupported column ctype %d", c.CType)
@@ -191,10 +211,10 @@ func NewBindableColumn(b *BaseColumn, ctype api.SQLSMALLINT, bufSize int) *Binda
 	return c
 }
 
-func NewVariableWidthColumn(b *BaseColumn, ctype api.SQLSMALLINT, colWidth api.SQLULEN) Column {
+func NewVariableWidthColumn(b *BaseColumn, ctype api.SQLSMALLINT, colWidth api.SQLULEN) (Column, error) {
 	if colWidth == 0 || colWidth > 1024 {
 		b.CType = ctype
-		return &NonBindableColumn{b}
+		return &NonBindableColumn{b}, nil
 	}
 	l := int(colWidth)
 	switch ctype {
@@ -206,11 +226,11 @@ func NewVariableWidthColumn(b *BaseColumn, ctype api.SQLSMALLINT, colWidth api.S
 	case api.SQL_C_BINARY:
 		// nothing to do
 	default:
-		panic(fmt.Errorf("do not know how wide column of ctype %d is", ctype))
+		return nil, fmt.Errorf("do not know how wide column of ctype %d is", ctype)
 	}
 	c := NewBindableColumn(b, ctype, l)
 	c.IsVariableWidth = true
-	return c
+	return c, nil
 }
 
 func (c *BindableColumn) Bind(h api.SQLHSTMT, idx int) (bool, error) {
@@ -234,7 +254,7 @@ func (c *BindableColumn) Value(h api.SQLHSTMT, idx int) (driver.Value, error) {
 		return nil, nil
 	}
 	if !c.IsVariableWidth && int(c.Len) != c.Size {
-		panic(fmt.Errorf("wrong column #%d length %d returned, %d expected", idx, c.Len, c.Size))
+		return nil, fmt.Errorf("wrong column #%d length %d returned, %d expected", idx, c.Len, c.Size)
 	}
 	return c.BaseColumn.Value(c.Buffer[:c.Len])
 }

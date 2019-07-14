@@ -19,6 +19,19 @@ type (
 		Day   SQLUSMALLINT
 	}
 
+	SQL_TIME_STRUCT struct {
+		Hour   SQLUSMALLINT
+		Minute SQLUSMALLINT
+		Second SQLUSMALLINT
+	}
+
+	SQL_SS_TIME2_STRUCT struct {
+		Hour     SQLUSMALLINT
+		Minute   SQLUSMALLINT
+		Second   SQLUSMALLINT
+		Fraction SQLUINTEGER
+	}
+
 	SQL_TIMESTAMP_STRUCT struct {
 		Year     SQLSMALLINT
 		Month    SQLUSMALLINT
@@ -45,6 +58,7 @@ type (
 //sys	SQLGetData(statementHandle SQLHSTMT, colOrParamNum SQLUSMALLINT, targetType SQLSMALLINT, targetValuePtr SQLPOINTER, bufferLength SQLLEN, vallen *SQLLEN) (ret SQLRETURN) = odbc32.SQLGetData
 //sys	SQLGetDiagRec(handleType SQLSMALLINT, handle SQLHANDLE, recNumber SQLSMALLINT, sqlState *SQLCHAR, nativeErrorPtr *SQLINTEGER, messageText *SQLCHAR, bufferLength SQLSMALLINT, textLengthPtr *SQLSMALLINT) (ret SQLRETURN) = odbc32.SQLGetDiagRec
 //sys	SQLNumParams(statementHandle SQLHSTMT, parameterCountPtr *SQLSMALLINT) (ret SQLRETURN) = odbc32.SQLNumParams
+//sys	SQLMoreResults(statementHandle SQLHSTMT) (ret SQLRETURN) = odbc32.SQLMoreResults
 //sys	SQLNumResultCols(statementHandle SQLHSTMT, columnCountPtr *SQLSMALLINT)  (ret SQLRETURN) = odbc32.SQLNumResultCols
 //sys	SQLPrepare(statementHandle SQLHSTMT, statementText *SQLCHAR, textLength SQLINTEGER) (ret SQLRETURN) = odbc32.SQLPrepare
 //sys	SQLRowCount(statementHandle SQLHSTMT, rowCountPtr *SQLLEN) (ret SQLRETURN) = odbc32.SQLRowCount
