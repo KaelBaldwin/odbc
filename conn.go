@@ -6,11 +6,11 @@ package odbc
 
 import (
 	"database/sql/driver"
-	"syscall"
 	"strings"
+	"syscall"
 	"unsafe"
 
-	"github.com/alexbrainman/odbc/api"
+	"github.com/KaelBaldwin/odbc/api"
 )
 
 type Conn struct {

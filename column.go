@@ -11,7 +11,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/alexbrainman/odbc/api"
+	"github.com/KaelBaldwin/odbc/api"
 )
 
 type BufferLen api.SQLLEN
@@ -66,7 +66,7 @@ func NewColumn(h api.SQLHSTMT, idx int) (Column, error) {
 		return nil, errors.New("Failed to allocate column name buffer")
 	}
 	b := &BaseColumn{
-		name: string(namebuf[:namelen]),
+		name:    string(namebuf[:namelen]),
 		SQLType: sqltype,
 	}
 	switch sqltype {
